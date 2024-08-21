@@ -31,7 +31,13 @@ $ mongod --dbpath ~/apps/mongodb/db --logpath ~/apps/mongodb/log/mongo.log
 
 ### Start `mongosh`
 
-- is based on Node.js 
+- it is a Node.js REPL environment
+- access to JavaScript
+  - variables
+  - functions
+  - conditionals
+  - loops
+  - control flow statements
 
 ```bash
 $ mongosh
@@ -303,96 +309,64 @@ $ db.hello()
     - drop indexes
     - improve schemas
 
-### Insert 
+### Inserting
 
-- db.<collection-name>.insertOne
-- db.<collection-name>.insert
-
-If the collection does not exists it will be auto-created. 
-
-```bash
-db.grades.insertOne({
-  student_id: 654321,
-  products: [
-    {
-      type: "exam",
-      score: 90,
-    },
-    {
-      type: "homework",
-      score: 59,
-    },
-    {
-      type: "quiz",
-      score: 75,
-    },
-    {
-      type: "homework",
-      score: 88,
-    },
-  ],
-  class_id: 550,
-})
-```
-
-```bash
-db.grades.insertMany([
-  {
-    student_id: 546789,
-    products: [
-      {
-        type: "quiz",
-        score: 50,
-      },
-      {
-        type: "homework",
-        score: 70,
-      },
-      {
-        type: "quiz",
-        score: 66,
-      },
-      {
-        type: "exam",
-        score: 70,
-      },
-    ],
-    class_id: 551,
-  },
-  {
-    student_id: 777777,
-    products: [
-      {
-        type: "exam",
-        score: 83,
-      },
-      {
-        type: "quiz",
-        score: 59,
-      },
-      {
-        type: "quiz",
-        score: 72,
-      },
-      {
-        type: "quiz",
-        score: 67,
-      },
-    ],
-    class_id: 551,
-  }
-])
-```
-
-### find
+- db.<collection-name>.insertOne( document )
+  - `insertedId` is returned for the newly inserted document
+- db.<collection-name>.insertMany( [ document1, document2, ...])
+  - `insertedIds` contains the ids of the newly inserted documents
+- if the collection does not exists it will be auto-created.
+- every document must have a _id which must be unique
+- 
+### Finding documents
 
 - $eg 
 - $in 
+- $gt
+- $gte
+- $lt
+- $lte
+- $elemMatch // query arrays
+- $and
+- $or
 
 ```bash
-$ db.grades.find( {'student_id': { $eq: 654321 } } )
-$ db.grades.find( {'student_id': 654321 } )
-$ db.grades.find( {'class_id': { $in: [ 550, 551] } } )
+# the items array field contains the results
+$ db.zips.find() # with it you can iterate over, will return by default max 20 documents (defined by displayBatchSize)
+$ db.grades.find( { student_id: { $eq: 1 } } )
+$ db.grades.find( { student_id: 1 } )
+$ db.grades.find( { class_id: { $in: [ 465, 456] } } ).count()
+# to access subdocuments, you must use the syntax “field.nestedfield”, which includes quotation marks.
+$ db.sales.find({ "items.price": { $gt: 50}})
+$ db.sales.find({ "customer.age": { $lte: 65}}).count()
+# Find Documents with an Array That Contains a Specified Value, returns also fields which are not an array
+$ db.accounts.find({ products: "InvestmentFund"}).count()
+# if you want to return documents which contain matching element of an array use $elemMatch
+$ db.accounts.find({ products: { $elemMatch: {$eq: "InvestmentFund" }  } }).count()
+# Use the $elemMatch operator to find all documents that contain the specified subdocument. 
+$ db.sales.find({
+  items: {
+    $elemMatch: { name: "laptop", price: { $gt: 800 }, quantity: { $gte: 1 } },
+  },
+})
+# $and implicit operator
+$ db.routes.find({ "airline.name": "Southwest Airlines", stops: { $gte: 1 } })
+$ $or operator
+$ db.routes.find({
+  $or: [{ dst_airport: "SEA" }, { src_airport: "SEA" }],
+})
+# mixing $and and $or
+$ db.routes.find({
+  $and: [
+    { $or: [{ dst_airport: "SEA" }, { src_airport: "SEA" }] },
+    { $or: [{ "airline.name": "American Airlines" }, { airplane: 320 }] },
+  ]
+})
+# Note, this does not work, the first $or was overwritten by the subsequent $or operation
+$ db.routes.find({
+    { $or: [{ dst_airport: "SEA" }, { src_airport: "SEA" }] },
+    { $or: [{ "airline.name": "American Airlines" }, { airplane: 320 }] },
+})
 ```
 
 ### ENABLING AUTHENTICATION FOR A SELF-MANAGED MONGODB DEPLOYMENT
@@ -525,6 +499,43 @@ db.createUser(
     ]
   }
 )
+```
+
+
+### MongoDB connection string
+
+- Standard format
+  - used to connect to standalone clusters, replica sets, or sharded clusters
+
+```bash
+mongodb://
+```
+
+- DNS Seed list format
+  - provides a DNS server list to our connection string
+  - gives more flexibility of deployment
+  - ability to change servers in rotation without reconfiguring clients
+
+- The Atlas used a DNS Seed list connection format:
+- **srv** section sets the TLS security option to true
+- host and optional port number (27017 if not specified)
+
+- Connect with MongoDB Shell:
+
+```bash
+mongosh "mongodb+srv://mdb-training-cluster.swnn5.mongodb.net/myFirstDatabase" --apiVersion 1 --username MDBUser
+```
+
+- Connect your application:
+
+```bash
+mongodb+srv://MDBUser:<password>@mdb-training-cluster.swnn5.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+```
+
+- Connect using MongoDB Compass
+
+```bash
+mongodb+srv://MDBUser:<password>@mdb-training-cluster.swnn5.mongodb.net/test
 ```
 
 ### SECURITY AUDITING IN MONGODB
