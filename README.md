@@ -1484,6 +1484,134 @@ mongorestore \
 “mongodb://restore-admin@mongod0.repleset.com:27017,mongod1.replset.com:27017,mongod2.replset.com:27017/?authSource=admin&replicaSet=replset”
 ```
 
+### Monitoring
+
+#### Core Metrics
+
+- What we should monitor?
+  - `Query targeting` 
+    - measures read efficiency, ideal ration is 1, every document scanned was returned
+    - very high ratio impacts performance
+  - `Storage`
+    - writes are refused at capacity
+  - `CPU utilization`
+    - prolonged high CPU usage can lead to operation delays
+    - optimize query performance with indexes
+  - `Memory utilization`
+    - MongoDB recommends the system to be sized to hold all indexes
+  - `Replication lag`
+    - measures delay between the primary and secondardy (expressed in seconds)
+    - high value negatively impacts elections and distributed read consistency
+- What is the baseline value?
+  - establish by sampling metrics during steady workload 
+- What is an acceptable burst value?
+  - normal to have occasional spikes
+  - excessive spiking or sustained spikes could indicate an issue
+- What is out of range value? 
+  - for Query Targeting a very high ratio
+  - for Replication lag: a secondary is unable to keep up with the primary
+  - for rest of metrics: resource exhaustion, 90% or above
+
+#### More metrics
+
+- `Opcounters`
+  - number of operations per second run on a MongoDB process
+  - MongoDB tracks: command, query, insert, delete, update and getMore
+- `Network traffic` 
+  - bytesIn - displays the average rate of physical bytes (after any wire compression) sent to the database server per second over the selected sample period.
+  - bytesOut - displays the average rate of physical bytes (after any wire compression) sent from the database server per second over the selected sample period.
+  - numRequests - displays the average rate of requests sent to the database server per second over the selected sample period.
+- `Connections`
+  - total number of open connections
+  - excessive connections can affect system performance
+- `Tickets available`
+  - nr of concurrent read and write operations available to the MongoDB storage engine
+  - when available tickets drop to 0, other operations must wait until one of the running operations completes and frees up the ticket
+  - by default is 128 tickets 
+
+#### View and analyse metrics 
+
+- `Metrics Tab Panel`
+  - Free/Shared Clusters
+    - Connections, Network, Opcounters, Logical Size
+  - M10+ Clusters
+    - More than 40 metrics
+- `Real-Time Performance Panel`
+  - only for M10+ clusters
+- `Atlas CLI`
+
+```bash
+atlas metrics processes <hostname:port> <options>
+```
+
+#### Configuring alerts
+
+- different alerts at `Organization` and `Project` levels
+- (focus was on this one) You must have the `Project Owner` role to configure `Project` level alerts
+- Alerts can be configured for any metric across all cluster tiers, however shared-cluster tiers only trigger alerts related to the supported metrics in those clusters
+  - `Connections`
+  - `Logical size`
+  - `Opcounters`
+  - `Network`
+- projects are created with a set of default alert settings
+
+```bash
+$ atlas alerts settings list
+$ atlas alerts settings create
+$ atlas alerts settings update
+$ atlas alerts settings delete
+```
+
+#### Respond to alerts
+
+```bash
+// view alerts
+// An alert’s status will only change to CLOSED once the condition that triggered the alert is resolved.
+$ atlas alerts list --status OPEN --output json
+// acknowlege an alert, the alert is not fired until the acknowledgment period ends or the error condition is resolved or the alert is manually unacknowledged
+$ atlas alerts acknowledge <alertId> --until '2028-01-01T00:00:00.000Z' --comment <comment>
+// unacknowledge an alert
+$ atlas alerts unacknowledge <alertId>
+```
+
+#### MongoDB Atlas Integrations for Monitoring
+- Receive Atlas alerts, view and analyse performance metrics
+- integrations: Prometheus, DataDog, PagerDuty, etc... (Prometheus and DataDog are only available on M10+ clusters)
+
+#### Self-managed monitoring
+- MongoDB recommends MongoDB Cloud Manager to monitor self-managed deployments
+- But sometimes is not an option: Use Prometheus + Grafana
+- Create a new database user (test) with the clusterMonitor role
+```bash
+db.createUser({user: "test",pwd: "testing",roles: [{ role: "clusterMonitor", db: "admin" },{ role: "read", db: "local" }]})
+```
+- Create a Service for Percona MongoDB Exporter
+- Configure Percona MongoDB Exporter as a Prometheus Target
+
+#### `command line metrics` 
+- monitor apps like MongoDB Cloud Manager, or Percona Prometheus exporter run this command at regular intervals
+
+##### serverStatus
+- serverStatus is a `diagnostic database command` that returns a document that provides an overview of the database’s state, including connection metrics.
+
+```bash
+db.runCommand({ serverStatus: 1 })
+db.runCommand( { serverStatus: 1 } ).connections
+{ current: 5, available: 495, totalCreated: Long('37') }
+```
+
+##### currentOp
+- currentOp is an `administrative command` that returns a document containing information on in-progress operations for the mongod instance
+```bash
+db.adminCommand({ currentOp: true, "$all": true, active: true })
+```
+
+##### killOp
+- killOp is an `administrative command` that allows us to kill active operations
+```bash
+db.adminCommand( { killOp: 1, op: <opid>, comment: <any> })
+```
+
 ### Upgrades and Maintenance
 
 - MongoDB minimizes downtime by leveraging replica sets to perform rolling maintenance
