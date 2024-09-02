@@ -790,12 +790,12 @@ show log startupWarnings // db.adminCommand( { getLog:'startupWarnings'} )
 
 - example: record slow operations
 - `slowms` (default is `100`) (self-managed or M10+ Atlas clusters)
-  - defines the maximum amount of time for an operation to be complete before it's considered slow
-  - any operation above this threshold will be written to the log
+    - defines the maximum amount of time for an operation to be complete before it's considered slow
+    - any operation above this threshold will be written to the log
 - Set it 3 ways
-  - `--slowms` parameter of `mongod` process
-  - `db.setProfilingLevel` in the `mongosh` 
-  - `slowOpsThreshold` in the `mongod.conf`
+    - `--slowms` parameter of `mongod` process
+    - `db.setProfilingLevel` in the `mongosh`
+    - `slowOpsThreshold` in the `mongod.conf`
 - profiling can have a negative impact on performance and disk space
 
 ```bash
@@ -811,10 +811,12 @@ sudo grep "Slow query" /var/log/mongodb/mongod.log | jq
 - increase verbosity of the logs
 - you can set verbosity levels for each component
 - you can set a global verbosity level `db.setLogLevel()`
+
 ```bash
 db.setLogLevel(1, "index");
 db.getLogComponents().index;
 ```
+
 - this is not supported in Atlas clusters
 
 ```bash
@@ -835,28 +837,67 @@ systemLog:
 
 - process of maintaining a log's size (automatically or manually)
 - the goal is to prevent logs from growing without bounds
-- Atlas 
-  - retains from all nodes log messages for 30 days
-  - to access logs your user needs this role: 'Project Data Access Read Only' role
-  - feature is available on M10+ clusters
+- Atlas
+    - retains from all nodes log messages for 30 days
+    - to access logs your user needs this role: 'Project Data Access Read Only' role
+    - feature is available on M10+ clusters
 - Self-managed
-  - retained indefinitely, unless:
-    - `sudo kill -SIGUSR1 $(pidof mongod)`
-    - `db.adminCommand( { logRotate : 1 } )` 
+    - retained indefinitely, unless:
+        - `sudo kill -SIGUSR1 $(pidof mongod)`
+        - `db.adminCommand( { logRotate : 1 } )`
 - two types:
-  - `rename` (MongoDB's default method)
-    - renames log with UTC timestamp
-    - opens a new log
-    - closes the old log
-  - `reopen`
-    - used in combination of `logrotate` linux service (required `logappend` option)
+    - `rename` (MongoDB's default method)
+        - renames log with UTC timestamp
+        - opens a new log
+        - closes the old log
+    - `reopen`
+        - used in combination of `logrotate` linux service (required `logappend` option)
 - MongoDB recommends you to automate log rotation
 - performance issues if both the log files and data files are on the same disk
 
-
 ### MongoDB Database Administrator Tools
 
--- TODO
+[The MongoDB Database Tools](https://www.mongodb.com/docs/database-tools/)
+
+- The MongoDB Database Tools are a suite of command-line utilities for working with MongoDB
+
+- `Binary Import / Export`
+    - `mongodump` - Creates a binary export of the contents of a mongod database.
+    - `mongorestore` - Restores data from a `mongodump` database dump into a mongod or mongos
+    - `bsondump` - Converts BSON dump files into JSON.
+- `Data Import / Export`
+    - `mongoimport` - Imports content from an Extended JSON, CSV, or TSV export file.
+    - `mongoexport` - Produces a JSON or CSV export of data stored in a `mongod` instance.
+- `Diagnostic Tools`
+    - `mongostat` - Provides a quick overview of the status of a currently running `mongod` or `mongos` instance.
+    - `mongotop` - Provides an overview of the time a mongod instance spends reading and writing data.
+- `GridFS Tools`
+    - `mongofiles` - Supports manipulating files stored in your MongoDB instance in GridFS objects.
+
+- [mongodump](https://www.mongodb.com/docs/database-tools/mongodump/)
+  - mongodump <options> <connection-string>
+  - not suitable for large deployments (for those use OpsManager, Cloud Manager)
+  - standalone / replica set but not shared clusters (doc says there is also possible with restrictions)
+  - the dump contain index data --> restore time can be longer
+
+```bash
+mongodump
+--out // by default to `dump` directory, a subdirectory for each database
+--db // limit the database 
+--collection // limit the collection
+--readPreference // reduces pressure on the primary
+--gzip // compresses output dump directory, (.gz extension for the metadata json and bson files)
+--archive // one file only 
+--oplog // creates top level `oplog.bson` which contains write operations that occur during the `mongodump` run.
+```
+
+- [mongorestore](https://www.mongodb.com/docs/database-tools/mongorestore/)
+- [bsondump](https://www.mongodb.com/docs/database-tools/bsondump/)
+- [mongoimport](https://www.mongodb.com/docs/database-tools/mongoimport/)
+- [mongoexport](https://www.mongodb.com/docs/database-tools/mongoexport/)
+- [mongostat](https://www.mongodb.com/docs/database-tools/mongostat/)
+- [mongotop](https://www.mongodb.com/docs/database-tools/mongotop/)
+- [mongofiles](https://www.mongodb.com/docs/database-tools/mongotop/)
 
 ### Self-Managed Server Administration
 
