@@ -93,81 +93,33 @@ docker compose -f mongodb-single-node.yaml up
 
 docker exec -it <> bash
 
+mongosh --port 27017
 rs0 [direct: primary] test> rs.status()
-{
-  set: 'rs0',
-  date: ISODate('2025-05-17T12:56:42.093Z'),
-  myState: 1,
-  term: Long('1'),
-  syncSourceHost: '',
-  syncSourceId: -1,
-  heartbeatIntervalMillis: Long('2000'),
-  majorityVoteCount: 1,
-  writeMajorityCount: 1,
-  votingMembersCount: 1,
-  writableVotingMembersCount: 1,
-  optimes: {
-    lastCommittedOpTime: { ts: Timestamp({ t: 1747486597, i: 1 }), t: Long('1') },
-    lastCommittedWallTime: ISODate('2025-05-17T12:56:37.527Z'),
-    readConcernMajorityOpTime: { ts: Timestamp({ t: 1747486597, i: 1 }), t: Long('1') },
-    appliedOpTime: { ts: Timestamp({ t: 1747486597, i: 1 }), t: Long('1') },
-    durableOpTime: { ts: Timestamp({ t: 1747486597, i: 1 }), t: Long('1') },
-    writtenOpTime: { ts: Timestamp({ t: 1747486597, i: 1 }), t: Long('1') },
-    lastAppliedWallTime: ISODate('2025-05-17T12:56:37.527Z'),
-    lastDurableWallTime: ISODate('2025-05-17T12:56:37.527Z'),
-    lastWrittenWallTime: ISODate('2025-05-17T12:56:37.527Z')
-  },
-  lastStableRecoveryTimestamp: Timestamp({ t: 1747486567, i: 1 }),
-  electionCandidateMetrics: {
-    lastElectionReason: 'electionTimeout',
-    lastElectionDate: ISODate('2025-05-17T12:55:17.479Z'),
-    electionTerm: Long('1'),
-    lastCommittedOpTimeAtElection: { ts: Timestamp({ t: 1747486517, i: 1 }), t: Long('-1') },
-    lastSeenWrittenOpTimeAtElection: { ts: Timestamp({ t: 1747486517, i: 1 }), t: Long('-1') },
-    lastSeenOpTimeAtElection: { ts: Timestamp({ t: 1747486517, i: 1 }), t: Long('-1') },
-    numVotesNeeded: 1,
-    priorityAtElection: 1,
-    electionTimeoutMillis: Long('10000'),
-    newTermStartDate: ISODate('2025-05-17T12:55:17.492Z'),
-    wMajorityWriteAvailabilityDate: ISODate('2025-05-17T12:55:17.582Z')
-  },
-  members: [
-    {
-      _id: 0,
-      name: 'mongo1:27017',
-      health: 1,
-      state: 1,
-      stateStr: 'PRIMARY',
-      uptime: 90,
-      optime: { ts: Timestamp({ t: 1747486597, i: 1 }), t: Long('1') },
-      optimeDate: ISODate('2025-05-17T12:56:37.000Z'),
-      optimeWritten: { ts: Timestamp({ t: 1747486597, i: 1 }), t: Long('1') },
-      optimeWrittenDate: ISODate('2025-05-17T12:56:37.000Z'),
-      lastAppliedWallTime: ISODate('2025-05-17T12:56:37.527Z'),
-      lastDurableWallTime: ISODate('2025-05-17T12:56:37.527Z'),
-      lastWrittenWallTime: ISODate('2025-05-17T12:56:37.527Z'),
-      syncSourceHost: '',
-      syncSourceId: -1,
-      infoMessage: 'Could not find member to sync from',
-      electionTime: Timestamp({ t: 1747486517, i: 2 }),
-      electionDate: ISODate('2025-05-17T12:55:17.000Z'),
-      configVersion: 1,
-      configTerm: 1,
-      self: true,
-      lastHeartbeatMessage: ''
-    }
-  ],
-  ok: 1,
-  '$clusterTime': {
-    clusterTime: Timestamp({ t: 1747486597, i: 1 }),
-    signature: {
-      hash: Binary.createFromBase64('AAAAAAAAAAAAAAAAAAAAAAAAAAA=', 0),
-      keyId: Long('0')
-    }
-  },
-  operationTime: Timestamp({ t: 1747486597, i: 1 })
-}
+
+# cleanup
+docker compose -f mongodb-single-node.yaml down -v
 ```
 
 ### Running three node ReplicaSet with Docker
+
+```bash
+docker compose -f mongodb-three-node.yaml up -d
+
+docker ps 
+CONTAINER ID   IMAGE                                         COMMAND                  CREATED          STATUS                    PORTS                                 NAMES
+3309b3ee18b2   mongodb/mongodb-community-server:8.0.9-ubi9   "python3 /usr/local/…"   13 seconds ago   Up 13 seconds (healthy)   0.0.0.0:27017->27017/tcp              mongo1
+96ff955e3a3a   mongodb/mongodb-community-server:8.0.9-ubi9   "python3 /usr/local/…"   13 seconds ago   Up 13 seconds             27017/tcp, 0.0.0.0:27018->27018/tcp   mongo2
+485d655fa76a   mongodb/mongodb-community-server:8.0.9-ubi9   "python3 /usr/local/…"   13 seconds ago   Up 13 seconds             27017/tcp, 0.0.0.0:27019->27019/tcp   mongo3
+
+docker volume ls 
+
+mongosh --port 27017
+rs0 [direct: primary] test>
+
+mongosh --port 27018
+rs0 [direct: secondary] test>
+
+# cleanup
+docker compose -f mongodb-three-node.yaml down -v
+```
 
