@@ -12,7 +12,7 @@ class TestMongoDBAppConfig {
     @Bean
     @ServiceConnection
     MongoDBContainer mongoDBContainer() {
-        return new MongoDBContainer("mongo:7");
+        return new MongoDBContainer("mongo:8.0.9-ubi9");
     }
 
 }
