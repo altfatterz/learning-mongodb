@@ -13,12 +13,6 @@ $ db.help()
 $ db.hello()
 ```
 
-```bash
-# mongosh "mongodb+srv://<username>:<password>@<cluster_name>.example.mongodb.net"
-# mongosh -u exampleuser -p examplepass "mongodb+srv://myatlasclusteredu.example.mongodb.net"
-# mongosh "mongodb+srv://demo-cluster.odqjme8.mongodb.net/" --apiVersion 1 --username altfatterz
-```
-
 ## MongoDB and the Document Model
 
 - MongoDB general purpose document database
