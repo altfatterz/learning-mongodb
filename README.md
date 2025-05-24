@@ -1,41 +1,4 @@
 
-### Cursor methods
-
-- sort
-    - didnt give an error if in the sort you specify an unknown field
-- count
-- limit
-
-```bash
-# alphabetically from A to Z and then a to z, this can be changed in the options part of the sort
-db.companies.find({ category_code: "music" }).sort({ name: 1 });
-db.companies.find({ category_code: "music" }).sort({ name: 1, _id: 1 });
-db.companies
-  .find({ category_code: "music" })
-  .sort({ number_of_employees: -1, _id: 1 })
-  .limit(3);
-```
-
-### Projections
-
-- db.collection.find( <query>, <projection> )
-- inclusion & exclusion statement can't be combined in the projections (_id field exception)
-- you can also use subfields in the projections but put into quotes
-
-```bash
-// Return all restaurant inspections - business name, result, and _id fields only
-db.inspections.find(
-  { sector: "Restaurant - 818" },
-  { business_name: 1, result: 1 }
-)
-// The _id field is included by default, it can be suppressed by setting its value to 0 in any projection
-// Return all restaurant inspections - business name and result fields only
-db.inspections.find(
-  { sector: "Restaurant - 818" },
-  { business_name: 1, result: 1, _id: 0 }
-)
-```
-
 ### CountDocuments
 
 db.collection.countDocuments( <query>, <options> )
