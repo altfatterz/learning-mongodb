@@ -39,3 +39,7 @@ rs0 [direct: secondary] test>
 docker compose -f mongodb-three-node.yaml down -v
 ```
 
+### Sample Data
+
+https://www.mongodb.com/docs/atlas/sample-data/
+

@@ -1,16 +1,4 @@
 
-### CountDocuments
-
-db.collection.countDocuments( <query>, <options> )
-
-- options is optional to specify the counting behaviour
-- with no argument counts all documents
-- accepts queries that use operators, like $elemMatch or $lt
-
-```bash
-db.trips.countDocuments({ tripduration: { $gt: 120 }, usertype: "Subscriber" })
-```
-
 ### Indexes
 
 - store small portion of the data, ordered and easy to search efficiently
@@ -151,40 +139,6 @@ winningPlan: {
     }
 ```
 
-### Deleting indices
-
-- deleting indices which are not needed since it causes write performance issues
-- before deleting hide the index, to avoid recreating accidentally removed indices because it takes time and resources
-- hidden indices are not used in the query but continued to be updated, you can assess the performance of queries and
-  unhide the index if needed
-- unhiding the index is much faster than recreating it.
-
-```bash
-db.restaurants.hideIndex( { borough: 1, ratings: 1 } ); // Specify the index key specification document
-db.restaurants.hideIndex( "borough_1_ratings_1" );  // Specify the index name
-db.restaurants.unhideIndex( { borough: 1, city: 1 } );  // Specify the index key specification document
-db.restaurants.unhideIndex( "borough_1_ratings_1" );    // Specify the index name
-```
-
-- use compound indices, below the `username_1` is redundant
-
-```bash
-find({username:'Joe'})
-find({username:'Joe', active:true})
-
-indices:
-username_1
-username_1_active_1
-```
-
-- drop index by key or name
-
-```bash
-db.customers.dropIndex({active:1, birthdate:-1, name:1}}
-db.customers.dropIndex(active_1_birthdate_-1_name_1)
-db.customers.dropIndexes() // delete all the indexes from a collection, with the exception of the default index on _id.
-db.customers.dropIndexes['index1name', 'index2name', 'index3name'] // drop specific indexes
-```
 
 ### MongoDB Logging Basics
 
