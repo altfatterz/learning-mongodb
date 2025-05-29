@@ -329,9 +329,204 @@ db.zips.find({ state: "CA", pop: { $lte: 12000 } }).explain().queryPlanner.winni
 
 ### Sparse indexes - https://www.mongodb.com/docs/manual/core/index-sparse/
 
+- Contain entries for documents that contain the indexed field, even if the field's value is null.
+- Documents without the indexed field are not part of the index
+- Index types that are sparse by default: 2D, 2DSphere, GeoHaystack, Wildcard
+- `Partial` vs `Sparse` index:
+  - Partial indexes are recommended when you have complex criteria for what should be indexed
+  - Recommended when you are only interested whether a fields is present or not, regardless of its value
+- Limitations:
+  - Sparse index will not be used by MongoDB if the result will be incomplete
+  - Sparse index with unique constraints - don't apply to documents that omit the indexed field
 
-### Clustered indexes
+Examples:
 
-### Time series collections
+```bash
+db.getSiblingDB("sample_db").sparseExample.insertMany([
+  {
+    _id: new ObjectId("64920144bf3922c17f7181ca"),
+    username: "coolUser",
+    avatar_url: "https://api.multiavatar.com/coolUser.svg",
+  },
+  {
+    _id: new ObjectId("64920144bf3922c17f7181cb"),
+    username: "testUser",
+    avatar_url: "https://api.multiavatar.com/testUser.svg",
+  },
+  {
+    _id: new ObjectId("64920144bf3922c17f7181cc"),
+    username: "anotherUser",
+    avatar_url: "https://api.multiavatar.com/anotherUser.svg",
+  },
+  { _id: new ObjectId("64920173bf3922c17f7181cd"), username: "test" },
+]);
+
+# create a sparse index
+db.sparseExample.createIndex({ avatar_url: 1 }, { sparse: true })
+
+# check the use of index
+db.sparseExample.find({ avatar_url: { $exists: true } }).explain().queryPlanner.winningPlan
+
+{
+  isCached: false,
+  stage: 'FETCH',
+  inputStage: {
+    stage: 'IXSCAN',
+    keyPattern: { avatar_url: 1 },
+    indexName: 'avatar_url_1',
+    isMultiKey: false,
+    multiKeyPaths: { avatar_url: [] },
+    isUnique: false,
+    isSparse: true,
+    isPartial: false,
+    indexVersion: 2,
+    direction: 'forward',
+    indexBounds: { avatar_url: [ '[MinKey, MaxKey]' ] }
+  }
+}
+
+# the sparse index wasn’t used since using it would lead to incomplete results
+db.sparseExample.find().sort({ avatar_url: 1 }).explain().queryPlanner.winningPlan
+
+{
+  isCached: false,
+  stage: 'SORT',
+  sortPattern: { avatar_url: 1 },
+  memLimit: 104857600,
+  type: 'simple',
+  inputStage: { stage: 'COLLSCAN', direction: 'forward' }
+}
+```
+
+# sparse index with unique constraint
+db.sparseExample.createIndex( {username: 1} , { sparse: 1, unique: true} )
+
+# we can still insert documents with no username, the uniqueness will not trigger
+db.sparseExample.insertOne({avatar_url: "https://api.multiavatar.com/best.svg}"})
+{
+    acknowledged: true,
+    insertedId: ObjectId('68384782c27201e8c42cf33a')
+}
+
+
+### Clustered indexes and collections - https://www.mongodb.com/docs/manual/core/clustered-collections/ 
+
+- All the index types discussed so far are stored separately from the actual documents
+- CRUD operations must therefore manipulate multiple data streams depending on the number of indexes
+- `Clustered indexes`
+  - available as part of a clustered collection
+  - can only be created when the clustered collection is built
+- `Clustered collection` - collections created with a `clustered index` specification
+  - Clustered indexes arrange documents according to their index key. This improves query performance on range and equality matches by reducing access to the disk.
+  - store the clustered index key alongside the documents
+  - non-clustered collections store documents in arbitrary order and keep index data separately
+  - Benefits: 
+    - improve CRUD performance
+    - improve query efficiency when using the clustered index key
+    - reduce disk usage
+    - reduce I/O
+    - improve memory usage
+  - Limitations:
+    - can only be created when the collection is created
+    - only one clustered index per clustered collection
+    - secondary indexes can be added to clustered collection
+    - clustered indexes not automatically used by the query planner if an eligible secondary index exists, use hint() to force
+    - can't be created in capped collections
+    - can't be hidden
+
+    
+### Time series collections - https://www.mongodb.com/docs/manual/core/timeseries-collections/
+
+- are `clustered collections` and by definition includes a clustered index
+- `time series collection`
+  - Documents are organized in such a way that those that originate from a single source will be grouped together with other data from a similar point in time.
+  - hold time series data - any data that is changing over time
+  - consists of 3 components:
+    - `time` - a clustered index is automatically created on this field
+    - `metadata` - the source, like sensor_id, etc 
+    - `measurements` - key value pairs
+  
+
+```bash
+# create a time series collection
+db.createCollection("weather", {
+  timeseries: {
+    timeField: "timestamp", # valid BSON date type
+    metaField: "metadata", # optional, but recommended, ex: device_id, sensor_id, measurement_type, etc..
+    granularity: "hours", # optional, the frequency at which we want to collect data, values can be: 'seconds' (default), 'minutes', 'hours'
+  },
+})
+
+# example data
+{ 
+  "metadata" {
+    "sensor_id" : 5578,
+    "type": "temperature",
+  },
+  "timestamp": ISODate("2025-05-12T00:00:00.000Z")
+  "temp": 12
+}
+
+# check if the clustered index was used
+db.weather.find({timestamp: ISODate("2025-05-12T00:00:00.000Z")}).explain().stages[0].$cursor.queryPlanner.winningPlan
+
+{
+  stage: 'CLUSTERED_IXSCAN',
+  filter: {  },
+  direction: 'forward',
+  minRecord: ObjectId("607b76800000000000000000"),
+  maxRecord: ObjectId("60a30380ffffffffffffffff")
+}
+
+# MongoDB recommends adding one or more secondary compound indexes on the fields designated as the timeField and metaField
+db.weather.createIndex( { "metadata.sensorId": 1, "timestamp": 1 } )
+
+# the secondary index could support query like:
+db.weather.explain().find({ "metadata.sensorId": 5578 }).sort({ "timestamp": 1 })
+```
 
 ### How to monitor indexes
+
+```bash
+
+# $indexStats will provide details about each of our indexes within a given collection 
+db.customers.aggregate([{ $indexStats: {} }])
+
+# based on the accesses.ops field values, you can determine which indexes are being used frequently and those that are not used at all.
+[
+  {
+    name: '_id_',
+    key: { _id: 1 },
+    accesses: { ops: Long("0"), since: ISODate("2023-06-15T19:08:51.580Z") },
+    host: '<cluster>.mongodb.net:27017'
+  },
+  ...
+  {
+    name: 'accounts_1',
+    key: { accounts: 1 },
+    accesses: { ops: Long("67"), since: ISODate("2023-06-21T20:20:25.955Z") },
+    host: '<cluster>.mongodb.net:27017'
+  },
+  {
+    name: 'email_1_username_1',
+    key: { email: 1, username: 1 },
+    accesses: { ops: Long("57"), since: ISODate("2023-06-21T20:20:25.997Z") },
+    host: '<cluster>.mongodb.net:27017'
+  },
+  {
+    name: 'username_1_email_1',
+    key: { username: 1, email: 1 },
+    accesses: { ops: Long("0"), since: ISODate("2023-06-21T20:20:26.040Z") },
+    host: '<cluster>.mongodb.net:27017'
+  }
+]
+```
+
+```bash
+# preferably enable it on non-production database
+# any operation that takes longer than 30 ms is considered slow. 
+db.setProfilingLevel(1, { slowms: 30 })
+```
+
+- Enabling the `database profiler` will capture database operations and record them in a capped collection called `system.profile`. 
+- Depending on the profiling level (1, or 2), the profiler will record only slow operations with a setting of 1 (defined by the `slowms` threshold), or all operations with a setting of 2.
