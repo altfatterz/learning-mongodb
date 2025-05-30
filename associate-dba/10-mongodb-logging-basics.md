@@ -125,5 +125,6 @@ Rotation Strategies
 - `rename` (default when using `mongod -v --logpath /var/log/mongodb/server1.log`
 - `reopen` (`mongod -v --logpath /var/log/mongodb/server1.log --logRotate reopen --logappend`)
 
-Automating Log Rotation with the Linux `logrotate` Service. More details: https://www.mongodb.com/docs/manual/tutorial/rotate-log-files/
+Automating Log Rotation with the Linux `logrotate` Service. 
+More details: https://www.mongodb.com/docs/manual/tutorial/rotate-log-files/
 
