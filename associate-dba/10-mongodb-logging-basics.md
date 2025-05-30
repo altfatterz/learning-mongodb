@@ -77,9 +77,53 @@ Examples of log messages:
 - replica set election ("c":"REPL")
   - is the process of selecting a new primary node 
 
-### MongoDB Server log customizations
+### MongoDB Server log customizations 
 
+db.setProfilingLevel() - https://www.mongodb.com/docs/manual/reference/method/db.setprofilinglevel/
 
+```bash
+# The profiler level:
+# - 0 to disable profiling completely
+# - 1 for profiling operations that take longer than the threshold, 
+# - 2 for profiling all operations.
+# When the profiler is disabled, db.setProfilingLevel() configures which slow operations are written to the diagnostic log.
+# Log everything which takes longer than 30 milliseconds
+db.setProfilingLevel(0, { slowms: 30 })
+
+# find log messages related to slow operation
+sudo grep "Slow query" /var/log/mongodb/mongod.log | jq
+
+vim /etc/mongod.conf
+# Set the Verbosity Level for all components
+systemLog:
+  verbosity: 1
+
+# set the verbosity level for a single component
+...
+systemLog:
+  ...
+  component:
+    index:
+      verbosity: 1
+...  
+sudo systemctl mongod restart
+```
 
 ### MongoDB Server log rotation and retention
+
+- Atlas retains the last 30 days of log messages and system event audit messages. (M10 and above)
+- The Performance Advisor retains at most 7 days of logs.
+
+```bash
+# Rotating Logs in mongosh
+db.adminCommand( { logRotate : 1 } )
+# Rotating Log alternatively, you can issue the SIGUSR1 signal to the mongod process
+sudo kill -SIGUSR1 $(pidof mongod)
+```
+
+Rotation Strategies
+- `rename` (default when using `mongod -v --logpath /var/log/mongodb/server1.log`
+- `reopen` (`mongod -v --logpath /var/log/mongodb/server1.log --logRotate reopen --logappend`)
+
+Automating Log Rotation with the Linux `logrotate` Service. More details: https://www.mongodb.com/docs/manual/tutorial/rotate-log-files/
 
