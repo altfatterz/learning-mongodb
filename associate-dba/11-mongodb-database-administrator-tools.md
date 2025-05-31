@@ -95,7 +95,44 @@ mongorestore --db=test --collection=purchaseorders dump/test/purchaseorders.bson
 
 ### Data Export Tools
 
+`mongoexport` -> https://www.mongodb.com/docs/database-tools/mongoexport/
+
+- is a database tool that produces a `JSON` or `CSV` export of data stored in a MongoDB instance.
+- can be used on `standalone`, `replica` set or `sharded cluster` deployments 
+- use it together with `mongoimport`
+
+Examples:
+
+```bash
+# canonical format, more type reservation
+# "$date":{"$numberLong":"1483574400000"} vs {"date":{"$date":"2016-12-01T00:00:00Z"}
+mongoexport -v --collection transactions --query '{"transaction_count": {"$gte": 50}}' --out transactions_canonical.json \
+ --jsonFormat canonical \
+ "mongodb+srv://altfatterz@demo-cluster.odqjme8.mongodb.net/sample_analytics"
+
+# relaxed format
+mongoexport -v --collection transactions --query '{"transaction_count": {"$gte": 50}}' --out transactions_relaxed.json \
+ --jsonFormat relaxed \
+ "mongodb+srv://altfatterz@demo-cluster.odqjme8.mongodb.net/sample_analytics"
+```
+
+- the `--query` must be in `Extended JSON v2 format` (either `relaxed` or `canonical/strict mode`) -> https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/ 
+
 ### Data Import Tools
+
+`mongoimport` -> https://www.mongodb.com/docs/database-tools/mongoimport/
+
+- `mongoimport` imports content from an Extended JSON, CSV, or TSV export created by mongoexport,
+- can be used on `standalone`, `replica` set or `sharded cluster` deployments
+- supports data files that are UTF-8 encoded
+- uses batching to efficiently load data
+
+Examples:
+
+```bash
+mongoimport -v --collection new_transactions --type json --mode insert --drop --file transactions_relaxed.json \
+ "mongodb://localhost:27017"
+```
 
 ### Diagnostic Tools: `mongostat`
 
