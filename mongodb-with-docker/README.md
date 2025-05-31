@@ -43,3 +43,17 @@ docker compose -f mongodb-three-node.yaml down -v
 
 https://www.mongodb.com/docs/atlas/sample-data/
 
+Backup from Atlas:
+
+```bash
+# backup the sample_analytics database
+mongodump -v --gzip --archive=sample_analytics_backup.gz \
+ "mongodb+srv://altfatterz@demo-cluster.odqjme8.mongodb.net/sample_analytics"
+```
+
+Restore to local mongodb instance:
+
+```bash
+mongorestore -v --gzip --archive=sample_analytics_backup.gz --drop "mongodb://localhost:27017"
+```
+
