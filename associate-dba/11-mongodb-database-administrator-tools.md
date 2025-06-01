@@ -134,9 +134,84 @@ mongoimport -v --collection new_transactions --type json --mode insert --drop --
  "mongodb://localhost:27017"
 ```
 
-### Diagnostic Tools: `mongostat`
+### Diagnostic Tools: 
 
-### Diagnostic Tools: `bsondump`
+`mongostat` - https://www.mongodb.com/docs/database-tools/mongostat/
 
-### MongoDB as a filesystem
+- provides real-time view of a currently running MongoDB deployment
+- MongoDB recommends more sophisticated tools for comprehensive view of your deployment
+  - Cloud Manager
+  - MongoDB Atlas Real-Time Performance Panel
+  - Third Party Monitoring Tool
+
+```bash
+# with default settings 
+mongostat
+
+# show the insert rate, query rate, and command rate in groups of three rows
+# use the -o option to specify what statistics to show in the output.
+mongostat -o='host,opcounters.insert.rate()=Insert Rate,opcounters.query.rate()=Query Rate,opcounters.command.rate()=Command Rate' --rowcount=3 2
+```
+
+`mongotop` - https://www.mongodb.com/docs/database-tools/mongotop/
+
+- outputs a list of all the active collections in the database with the time spent on `reads`, `writes` and `total` within the polling interval
+
+```bash
+# default
+mongotop
+
+# polls every two seconds and shows the outputs in groups of three rows in json format
+mongotop 2 --rowcount=3 --json
+```
+
+`bsondump` - https://www.mongodb.com/docs/database-tools/bsondump/
+
+- reads BSON files
+- can be used to diagnose issues that arise when using `mongorestore`
+- it is for inspecting BSON files, not for data ingestion or other application uses
+
+```bash
+mongodump -v --db sample_analytics --collection accounts
+# output the documents in the accounts.bson file in a readable JSON format.
+bsondump --pretty dump/sample_analytics/accounts.bson
+# debug option to see the different data types and sizes 
+bsondump --type=debug dump/sample_analytics/accounts.bson
+```
+
+`mongofiles` - https://www.mongodb.com/docs/database-tools/mongofiles/
+- is a database utility that provides an interface between your filesystem and GridFS 
+
+`GridFS` - https://www.mongodb.com/docs/manual/core/gridfs/ 
+- is a specification for storing files in a MongoDB database
+- designed to work with files larger than 16 MB, files of any size is supported
+- GridFS does not support multi-document transactions -> you cannot update the content of the file atomically
+- You cannot query the content of the file
+
+```bash
+# upload the README.md file
+mongofiles -v put README.md "mongodb://localhost:27017/my-files"
+# search files with md extension 
+mongofiles -v search *.md "mongodb://localhost:27017/my-files"
+# list files
+mongofiles -v list "mongodb://localhost:27017/my-files"
+# download README.md and store it as new-README.md
+mongofiles -v get README.md --local=new-README.md "mongodb://localhost:27017/my-files"
+
+# show collections
+# stores binary data
+fs.chunks
+# stores file metadata
+fs.files
+db.fs.files.findOne()
+{
+  _id: ObjectId('683c39c0bc34fd67ece2e1bc'),
+  length: Long('34095'),
+  chunkSize: 261120,
+  uploadDate: ISODate('2025-06-01T11:30:08.932Z'),
+  filename: 'README.md',
+  metadata: {}
+}
+```
+
 
