@@ -57,3 +57,9 @@ Restore to local mongodb instance:
 mongorestore -v --gzip --archive=sample_analytics_backup.gz --drop "mongodb://localhost:27017"
 ```
 
+
+### Download Sample Data
+
+```bash
+curl  https://atlas-education.s3.amazonaws.com/sampledata.archive -o sampledata.archive
+```
