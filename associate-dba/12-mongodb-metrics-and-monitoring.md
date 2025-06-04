@@ -1,4 +1,4 @@
-## 13 - MongoDB Database Metrics & Monitoring
+## 12 - MongoDB Database Metrics & Monitoring
 
 ### Core Metrics
 

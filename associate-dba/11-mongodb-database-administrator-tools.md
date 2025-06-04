@@ -1,4 +1,4 @@
-## 12 - MongoDB Database Administrator Tools
+## 11 - MongoDB Database Administrator Tools
 
 ### Get Started with DBA tools
 
