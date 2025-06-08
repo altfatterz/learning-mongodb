@@ -153,9 +153,15 @@ db.adminCommand({
 $ mongodb://db0.example.com,db1.example.com,db2.example.com/?replicaSet=myRepl&readPreference=secondary&maxStalenessSeconds=120
 ```
 
-### Deploying a replica set in a MongoDB deployment - TODO
+### Deploying a replica set in a MongoDB deployment - https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set/
 
-- deploying a `replica set`
+- Secure 3 servers with a shared security key
+
+```bash
+mongod0.replset.com
+mongod1.replset.com
+mongod2.replset.com
+```
 
 ```bash
 $ openssl rand -base64 756 > /tmp/keyfile
@@ -185,7 +191,10 @@ $ sudo systemctl restart mongod
 $ sudo systemctl status mongod
 ```
 
+Now we have the configuration files in place and servers are secured. Let's connect these servers: 
+
 ```bash
+# initialise the replica set
 $ rs.initiate({
 _id: "mongodb-repl-example",
 version: 1,
@@ -196,6 +205,8 @@ members: [
 })
 {ok: 1}
 
+# create the first database user
+
 $ db.createUser({
 user:"admin-user",
 pwd:"admin-pwd
@@ -205,10 +216,11 @@ roles: [
 })
 ```
 
-We connect to an entire replica set:
+Connect to replicaset with the recently created dba-admin user
 
 ```bash
-$ mongosh "mongodb://dba-admin:dba-pass@<server-one-ip:port>,<server-two-ip:port>,<server-three-ip:port>/?authSource=admin&replicaSet=mongodb-repl-example"
+# mongosh driver will automatically figure out which member is the primary
+$ mongosh "mongodb://dba-admin:dba-pass@mongod0.replset.com,mongod1.replset.com,mongod2.replset.com/?authSource=admin&replicaSet=mongodb-repl-example"
 $ rs.status()
 $ db.getUsers()
 $ db.hello()
@@ -234,17 +246,23 @@ Initiate an election to see that another node became the primary
 $ rs.stepDown() 
 ```
 
-- examples to reconfigure a replica set (updating the priority, set tag)
+### Configuring a replica set in a MongoDB deployment
+
+db.hello() - https://www.mongodb.com/docs/manual/reference/method/db.hello/
+rs.conf() - https://www.mongodb.com/docs/manual/reference/method/rs.conf/
+rs.status() - https://www.mongodb.com/docs/manual/reference/method/rs.status/
+
+- examples to reconfigure a replica set (updating the priority, set tag, adding or removing members)
 
 ```bash
-$ config = rs.conf()
+$ let config = rs.conf()
 $ config.members[2].priority=10
 $ config.members[2].tag = { "location": "Virginia", "provider": "AWS" };
 $ rs.reconfig(config)
 $ rs.conf().members()
 ```
 
-- remove a member from a replica set
+- Remove a member from a replica set
 
 ```bash
 $ config = rs.conf()
@@ -252,8 +270,53 @@ $ config = rs.conf()
 $ config.members.splice(1, 1)
 # another option rs.remove("mongod1.replset.com:27017")
 $ rs.reconfig(config)
-# Status of a Replica Set
+# status of the replica set members and which member is the primary
 $ rs.status()
-# primary field 
-$ rs.hello()
+# retrieve the status of a mongod instance 
+$ db.hello()
+
+{
+topologyVersion: {
+    processId: ObjectId("63fd0cd9a301ea9f0b1049d2"),
+    counter: Long("6")
+  },
+hosts: [
+    'mongod0.replset.com:27017',
+    'mongod1.replset.com:27017',
+    'mongod2.replset.com:27017'
+  ],
+  setName: 'mongodb-repl-example',
+  setVersion: 1,
+  isWritablePrimary: true,
+  secondary: false,
+  primary: 'mongod0.replset.com:27017',
+  me: 'mongod0.replset.com:27017',
+  electionId: ObjectId("7fffffff0000000000000003"),
+  lastWrite: {
+    opTime: { ts: Timestamp({ t: 1675469681, i: 1 }), t: Long("3") },
+    lastWriteDate: ISODate("2023-02-04T00:14:41.000Z"),
+    majorityOpTime: { ts: Timestamp({ t: 1675469681, i: 1 }), t: Long("3") },
+    majorityWriteDate: ISODate("2023-02-04T00:14:41.000Z")
+  },
+  maxBsonObjectSize: 16777216,
+  maxMessageSizeBytes: 48000000,
+  maxWriteBatchSize: 100000,
+  localTime: ISODate("2023-02-04T00:14:44.847Z"),
+  logicalSessionTimeoutMinutes: 30,
+  connectionId: 130,
+  minWireVersion: 0,
+  maxWireVersion: 17,
+  readOnly: false,
+  ok: 1,
+    '$clusterTime': {
+    clusterTime: Timestamp({ t: 1677542950, i: 6 }),
+    signature: {
+      hash: Binary(Buffer.from("fac842d36ee350c41d1aa908ba6d306f53afc514", "hex"), 0),
+      keyId: Long("7148911878087901206")
+    }
+  },
+  operationTime: Timestamp({ t: 1677542950, i: 6 })
+}
 ```
+
+
