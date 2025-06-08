@@ -3,6 +3,22 @@
 ### Running one node ReplicaSet with Docker
 
 - A `replica set`, also known as a `cluster`, provides redundancy and availability.
+- Enable authentication
+
+```bash
+openssl rand -base64 756 > mongo-keyfile
+chmod 400 mongo-keyfile
+```
+
+- Create the admin user by connecting with to the instance wihin the container
+
+```bash
+mongosh 
+use admin
+db.createUser( {user: "admin", pwd: passwordPrompt(), roles: [{ role: "userAdminAnyDatabase", db: "admin" }]})
+```
+
+- Now we can connect with user `admin`
 
 ```bash
 docker compose -f mongodb-single-node.yaml up

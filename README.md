@@ -11,22 +11,13 @@ security:
 
 ### ESTABLISHING AUTHORIZATION FOR A SELF-MANAGED MONGODB DEPLOYMENT
 
-With `mongosh` you will be still able to connect using the `localhost` exception as long as you didn't create any users
-or roles
 
 ```bash
 $ use admin
-$ db.createUser(
-{
-    user: "globalUserAdmin",
-    pwd: passwordPrompt(),
-    roles: [
-        { role: "userAdminAnyDatabase", db: "admin" }
-    ]
-    }
-)
+$ db.createUser( {user: "admin", pwd: passwordPrompt(), roles: [{ role: "userAdminAnyDatabase", db: "admin" }]})
+
 $ quit()
-$ mongosh --username globalUserAdmin
+$ mongosh --username admin
 admin
 $ use admin
 $ db.getUsers()
