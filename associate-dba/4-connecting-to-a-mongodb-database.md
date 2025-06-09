@@ -13,8 +13,11 @@
 `mongodb+srv://<username>:<password>@<host>[:<port>]?<options>`
 `mongodb+srv://<username>:<password>@mdb-training-cluster.swnn5.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`
 
+- with the mongodb+srv we don't need to specify the authentication database 
 `mongosh "mongodb+srv://demo-cluster.odqjme8.mongodb.net/" --apiVersion 1 --username altfatterz`
 
+- connect to a replicaset default database  
+`mongosh --uri="mongodb://user@mongodb1.replica.com:27017,mongodb2.replica.com:27017/?authSource=admin&replicaSet=myReplicaSet"` 
 
 ### Mongo Shell
 
