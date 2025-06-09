@@ -3,7 +3,7 @@ services:
     image: mongodb/mongodb-community-server:8.0.9-ubi9
     hostname: mongo1
     container_name: mongo1
-    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017", "--keyFile", "/etc/mongo-keyfile"]
     ports:
       - 27017:27017
     healthcheck:
@@ -16,28 +16,31 @@ services:
     volumes:
       - "mongo1_data:/data/db"
       - "mongo1_config:/data/configdb"
+      - ./mongo-keyfile:/etc/mongo-keyfile
 
   mongo2:
     image: mongodb/mongodb-community-server:8.0.9-ubi9
     hostname: mongo2
     container_name: mongo2
-    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27018"]
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27018", "--keyFile", "/etc/mongo-keyfile"]
     ports:
       - 27018:27018
     volumes:
       - "mongo2_data:/data/db"
       - "mongo2_config:/data/configdb"
+      - ./mongo-keyfile:/etc/mongo-keyfile
 
   mongo3:
     image: mongodb/mongodb-community-server:8.0.9-ubi9
     hostname: mongo3
     container_name: mongo3
-    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27019"]
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27019", "--keyFile", "/etc/mongo-keyfile"]
     ports:
       - 27019:27019
     volumes:
       - "mongo3_data:/data/db"
       - "mongo3_config:/data/configdb"
+      - ./mongo-keyfile:/etc/mongo-keyfile
 
 volumes:
   mongo1_data:
