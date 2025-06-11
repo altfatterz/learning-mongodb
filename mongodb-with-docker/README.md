@@ -3,9 +3,55 @@
 ### Running one node ReplicaSet with Docker
 
 - A `replica set`, also known as a `cluster`, provides redundancy and availability.
+
+- Startup a single node replica set
+
+```bash
+docker compose -f mongodb-single-node-without-auth.yaml up -d
+```
+
+```bash
+mongosh
+ 
+rs0 [direct: primary] test> rs.status()
+rs0 [direct: primary] test> db.hello() 
+rs0 [direct: primary] test> db.version()
+```
+
+- Load sample data
+
+```bash
+# the archive was download using: curl https://atlas-education.s3.amazonaws.com/sampledata.archive -o sampledata.archive 
+cd ~/apps/mongodb
+mongorestore -v --archive="sampledata.archive" --drop "mongodb://localhost:27017"
+```
+
+```bash
+rs0 [direct: primary] test> show dbs()
+admin                80.00 KiB
+config              132.00 KiB
+local               192.27 MiB
+sample_airbnb        52.13 MiB
+sample_analytics      8.80 MiB
+sample_geospatial     1.14 MiB
+sample_guides        40.00 KiB
+sample_mflix        110.15 MiB
+sample_restaurants    6.38 MiB
+sample_supplies       1.03 MiB
+sample_training      45.92 MiB
+sample_weatherdata    2.55 Mi
+```
+
+- Cleanup
+
+```bash
+docker compose -f mongodb-single-node-without-auth.yaml down -v
+```
+
+### Running one node ReplicaSet with Docker with auth enabled
+
+- A `replica set`, also known as a `cluster`, provides redundancy and availability.
 - Enable authentication
-
-
 - Create a keyfile
 
 ```bash
@@ -41,13 +87,35 @@ rs0 [direct: primary] test> db.hello() # no authentication needed
 rs0 [direct: primary] test> db.version() # no authentication needed
 ```
 
+```bash
+# the archive was download using: curl https://atlas-education.s3.amazonaws.com/sampledata.archive -o sampledata.archive 
+cd ~/apps/mongodb
+mongorestore -v --archive="sampledata.archive" --drop "mongodb://admin@localhost:27017"
+```
+
+```bash
+rs0 [direct: primary] test> show dbs()
+admin                80.00 KiB
+config              132.00 KiB
+local               192.27 MiB
+sample_airbnb        52.13 MiB
+sample_analytics      8.80 MiB
+sample_geospatial     1.14 MiB
+sample_guides        40.00 KiB
+sample_mflix        110.15 MiB
+sample_restaurants    6.38 MiB
+sample_supplies       1.03 MiB
+sample_training      45.92 MiB
+sample_weatherdata    2.55 Mi
+```
+
 - Cleanup
 
 ```bash
 docker compose -f mongodb-single-node.yaml down -v
 ```
 
-### Running three node ReplicaSet with Docker
+### Running three node ReplicaSet with Docker with auth enabled
 
 ```bash
 docker compose -f mongodb-three-node.yaml up -d
@@ -96,15 +164,6 @@ rs0 [direct: secondary] test>
 docker compose -f mongodb-three-node.yaml down -v
 ```
 
-### Load Sample Data
-
-```bash
-curl https://atlas-education.s3.amazonaws.com/sampledata.archive -o sampledata.archive
-```
-
-```bash
-mongorestore -v --archive=sampledata.archive --drop "mongodb://admin@localhost:27017"
-```
 
 ```bash
 mongosh --username admin
@@ -125,7 +184,38 @@ sample_weatherdata    2.55 MiB
 
 ```
 
-### Load Sample data with MongoDB Atlas - https://www.mongodb.com/docs/atlas/sample-data/
+### Generate Data
+
+```bash
+# node_modules is created in the mongodb-with-docker folder
+npm install --save-dev @faker-js/faker
+
+mongosh
+# https://www.mongodb.com/docs/manual/reference/method/js-native/
+rs0 [direct: primary] test> load("fakeUsers.js")
+Inserting fake users ...
+true
+rs0 [direct: primary] test> load("fakeUsers.js")
+rs0 [direct: primary] test> use fake-db
+rs0 [direct: primary] fake-db> db.users.countDocuments()
+10      
+rs0 [direct: primary] fake-db> db.users.findOne()
+{
+  _id: ObjectId('6849491a74774afc9b3b1916'),
+  name: 'Julius Dach',
+  email: 'Darion_MacGyver98@hotmail.com',
+  phone: '1-890-668-8591'
+}
+```
+
+### Atlas - https://www.mongodb.com/docs/atlas/sample-data/
+
+- Connect
+
+```bash
+# password in 1Password
+mongosh "mongodb+srv://demo-cluster.odqjme8.mongodb.net/" --apiVersion 1 --username altfatterz
+```
 
 Backup from Atlas:
 
